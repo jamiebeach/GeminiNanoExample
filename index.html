@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Nano Example</title>
+</head>
+<body>
+    <style>
+        body {
+            font-family: courier;
+        }
+        input {
+            font-size:20pt;
+            width:90%;
+            margin:25px;
+            font-family:courier;
+        }
+
+        #result {
+            font-size:20pt;
+            margin:25px;
+        }
+    </style>
+    <h1>AI Text Session Example</h1>
+    <input type="text" id="promptInput" placeholder="Enter your prompt here">
+    <div id="result"></div>
+
+    <script>
+        let aiSession;
+
+        async function initAISession() {
+            const canCreate = await window.ai.canCreateTextSession();
+            if (canCreate !== "no") {
+                aiSession = await window.ai.createTextSession();
+                document.getElementById('promptInput').disabled = false;
+            } else {
+                console.log("AI model is not available for this device.");
+                document.getElementById('result').textContent = "AI model is not available for this device.";
+                document.getElementById('promptInput').disabled = true;
+            }
+        }
+
+        async function runAISession(prompt) {
+            if (aiSession) {
+                try {                    
+                    document.getElementById('result').innerText = "Thinking...";
+                    const stream = await aiSession.promptStreaming(prompt);
+                    for await (const chunk of stream) {
+                        const sanitizedResult = sanitizeHTML(chunk);
+                        document.getElementById('result').innerHTML = sanitizedResult;
+                    }
+                } catch (error) {
+                    console.error("Error in AI session:", error);
+                }
+            } else {
+                document.getElementById('result').innerText = "AI session is not initialized.";
+            }
+        }
+
+        // Simple HTML sanitizer function
+        function sanitizeHTML(html) {
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            return temp.innerHTML;
+        }
+
+        // Initialize the AI session when the page loads
+        window.onload = initAISession;
+
+        // Add event listener to the input
+        document.getElementById('promptInput').addEventListener('input', function(e) {
+            const prompt = e.target.value.trim();
+            if (prompt) {
+                runAISession(prompt);
+            }
+        });
+    </script>
+</body>
+</html>
